@@ -60,7 +60,8 @@ class VacuumVisualizer:
             "Equal Steepest Hill Climbing (Leo đồi dốc nhất thêm đk bằng)": "HILL_ESTEEPEST",
             "Random Restart Hill Climbing (Leo đồi ngẫu nhiên quay lại)": "HILL_RES_RANDOM",
             "Local Beam Search (Lọc trùng nội bộ - k=2)": "BEAM_LOCAL",
-            "Simulated Annealing - Tìm kiếm luyện kim" : "SA"
+            "Simulated Annealing - Tìm kiếm luyện kim" : "SA",
+            "Tìm kiếm AND-OR (Tỉ lệ 20% không di chuyển)" : "AND_OR"
         }
         self.algo_combobox['values'] = list(self.algo_dict.keys())
         self.algo_combobox.current(0)
@@ -106,6 +107,9 @@ class VacuumVisualizer:
         self.path_steps = None  
         self.current_step_index = 0
         self.step_counter = 0
+        self.is_and_or_mode = False
+        self.tree_plan = None
+        self.current_plan_node = None
         
         if hasattr(self, 'use_fixed_floor') and self.use_fixed_floor.get():
             floor, vacuum_pos = algorithms.static_initialize()
@@ -181,10 +185,26 @@ class VacuumVisualizer:
                 self.path_steps = algorithms.run_equal_steepest_hill_climbing(self.current_floor, self.current_vacuum_pos)
             elif algo_choice == "HILL_RES_RANDOM":
                 self.path_steps = algorithms.run_random_restart_hill_climbing(self.current_floor, self.current_vacuum_pos, 10)
-            elif algo_choice == "BEAM_LOCAL":
-                self.path_steps = algorithms.run_local_beam_search_local_filtering(self.current_floor, self.current_vacuum_pos)
             elif algo_choice == "SA":
                 self.path_steps = algorithms.run_simulated_annealing(self.current_floor, self.current_vacuum_pos)
+            elif algo_choice == "AND_OR":
+                self.is_and_or_mode = True
+                plan = algorithms.run_and_or(self.current_floor, self.current_vacuum_pos)
+                if plan is not None:
+                    self.tree_plan = plan
+                    self.current_plan_node = plan
+                    self.path_steps = True  # Non-None to allow simulation
+                    self.log_message("Tìm thấy KẾ HOẠCH DỰ PHÒNG AND-OR:")
+                    self.log_message(algorithms.format_plan(plan))
+                else:
+                    self.is_and_or_mode = False
+                    self.tree_plan = None
+                    self.current_plan_node = None
+                    self.path_steps = None
+                    self.is_running = False
+                    self.log_message("KẾT THÚC: Không tìm thấy kế hoạch cho bản đồ này.")
+                    messagebox.showwarning("Không có lời giải", "Không tìm thấy kế hoạch.")
+                    return
 
 
         self.run_next_step()
@@ -195,6 +215,57 @@ class VacuumVisualizer:
 
     def run_next_step(self):
         if not self.is_running or self.path_steps is None:
+            return
+
+        if self.is_and_or_mode:
+            import random
+            
+            # Check goal state
+            if self.current_floor == algorithms.GOAL_STATE:
+                self.is_running = False
+                self.path_steps = None
+                self.log_message(f"HOÀN THÀNH: Sàn đã sạch rác hoàn toàn! Tổng số bước: {self.step_counter}")
+                messagebox.showinfo("Thành công", "Robot đã hoàn thành đường đi!")
+                return
+                
+            if self.current_plan_node == [] or self.current_plan_node == "LOOP" or self.current_plan_node is None:
+                self.is_running = False
+                self.path_steps = None
+                self.log_message("LỖI: Kế hoạch không hợp lệ.")
+                return
+                
+            action, contingencies = self.current_plan_node
+            
+            # Simulate 20% slip rate
+            roll = random.random()
+            if roll < 0.20:
+                self.log_message(f"[Bước {self.step_counter}] Hành động: {action} -> TRƯỢT CHÂN (Vẫn ở ô: {self.current_vacuum_pos})")
+            else:
+                temp_floor, temp_vacuum_pos = algorithms.apply_move(self.current_floor, self.current_vacuum_pos, action)
+                self.current_floor = temp_floor
+                self.current_vacuum_pos = temp_vacuum_pos
+                self.update_ui_grid()
+                
+                child_state = (tuple(tuple(row) for row in temp_floor), temp_vacuum_pos)
+                if child_state not in contingencies:
+                    self.is_running = False
+                    self.path_steps = None
+                    self.log_message(f"LỖI: Trạng thái {child_state} không có trong contingencies!")
+                    return
+                    
+                self.current_plan_node = contingencies[child_state]
+                self.log_message(f"[Bước {self.step_counter}] Hành động: {action} -> THÀNH CÔNG (Đến ô: {self.current_vacuum_pos})")
+                
+            self.step_counter += 1
+            
+            if self.current_floor == algorithms.GOAL_STATE:
+                self.is_running = False
+                self.path_steps = None
+                self.log_message(f"HOÀN THÀNH: Sàn đã sạch rác hoàn toàn! Tổng số bước: {self.step_counter}")
+                messagebox.showinfo("Thành công", "Robot đã hoàn thành đường đi!")
+                return
+                
+            self.root.after(500, self.run_next_step)
             return
 
         if self.current_step_index >= len(self.path_steps):

@@ -945,3 +945,63 @@ def run_simulated_annealing(floor, vacuum_pos):
         t = alpha * t
     
     return generate_path_list(current_node, False)
+
+def run_and_or(initial_floor, initial_vacuum_pos):
+    def state_to_tuple(floor_state, position):
+        return (tuple(tuple(row) for row in floor_state), position)
+        
+    root = Node(initial_floor, initial_vacuum_pos, None, None)
+    
+    def or_search(node, path):
+        if node.floor_state == GOAL_STATE:
+            return []
+            
+        state = state_to_tuple(node.floor_state, node.position)
+        if state in path:
+            return "FAILURE"
+            
+        moves = posible_moves(node.position)
+        for action in moves:
+            temp_floor, temp_vacuum_pos = apply_move(node.floor_state, node.position, action)
+            child = Node(temp_floor, temp_vacuum_pos, node, action)
+            
+            result_states = [child, node]
+            
+            plan = and_search(result_states, state, path + [state])
+            if plan != "FAILURE":
+                return [action, plan]
+                
+        return "FAILURE"
+
+    def and_search(nodes, parent_state, path):
+        plans = {}
+        for node in nodes:
+            state = state_to_tuple(node.floor_state, node.position)
+            if state == parent_state:
+                plans[state] = "LOOP"
+            else:
+                plan = or_search(node, path)
+                if plan == "FAILURE":
+                    return "FAILURE"
+                plans[state] = plan
+        return plans
+
+    plan = or_search(root, [])
+    if plan != "FAILURE":
+        return plan
+    else:
+        return None
+
+def format_plan(plan, indent=0):
+    if plan == []:
+        return " " * indent + "ĐÃ ĐẠT MỤC TIÊU (Sạch rác hoàn toàn!)\n"
+    if plan == "LOOP":
+        return " " * indent + "VÒNG LẶP (Bị trượt chân, hãy đi lại)\n"
+        
+    action, contingencies = plan
+    res = " " * indent + f"-> Hành động: {action}\n"
+    for state, subplan in contingencies.items():
+        floor, pos = state
+        res += " " * indent + f"   Nếu kết quả dẫn tới vị trí {pos}:\n"
+        res += format_plan(subplan, indent + 6)
+    return res
