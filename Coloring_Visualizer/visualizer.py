@@ -3,11 +3,18 @@ from tkinter import ttk, scrolledtext, messagebox
 import sys
 import os
 
-# Import constraints, colors, and the backtracking generator from algorithms.py
+# Import constraints, colors, and the generators from algorithms.py
 try:
-    from algorithms import constrains, COLOR, backtracking_coloring_generator
+    from algorithms import (
+        constrains, 
+        COLOR, 
+        backtracking_coloring_generator,
+        forward_checking_generator,
+        min_conflicts_generator,
+        ac3_coloring_generator
+    )
 except ImportError:
-    # Fallback if algorithms.py is not importable
+    # Fallback if algorithms.py is not importable (this fallback will only support Backtracking)
     constrains = {
         "Thành phố Thủ Đức": ["Quận 1", "Quận 4", "Quận 7", "Quận 12", "Quận Bình Thạnh"],
         "Quận 1": ["Thành phố Thủ Đức", "Quận 3", "Quận 4", "Quận 5", "Quận Bình Thạnh", "Quận Phú Nhuận"],
@@ -61,6 +68,10 @@ except ImportError:
             assignments[node] = None
             yield ("BACKTRACK", node, color, None)
         return False
+        
+    forward_checking_generator = backtracking_coloring_generator
+    min_conflicts_generator = backtracking_coloring_generator
+    ac3_coloring_generator = backtracking_coloring_generator
 
 # Map Vietnamese color names to Tkinter-compatible hex codes
 COLOR_MAP = {
@@ -130,7 +141,7 @@ SHORT_NAMES = {
 class HCMCMapColoringVisualizer:
     def __init__(self, root):
         self.root = root
-        self.root.title("HCMC Map Coloring Backtracking Visualizer")
+        self.root.title("HCMC Map Coloring Visualizer (Backtracking / FC / Min-Conflicts / AC-3)")
         self.root.geometry("1100x700")
         self.root.resizable(True, True)
 
@@ -157,7 +168,7 @@ class HCMCMapColoringVisualizer:
         
         title_label = tk.Label(
             title_frame, 
-            text="Mô phỏng thuật toán tô màu các quận TP. Hồ Chí Minh (Backtracking)", 
+            text="Mô phỏng thuật toán tô màu các quận TP. Hồ Chí Minh", 
             font=("Helvetica", 16, "bold")
         )
         title_label.pack()
@@ -188,16 +199,31 @@ class HCMCMapColoringVisualizer:
         )
         control_frame.pack(fill=tk.X, pady=(0, 10))
 
+        # Algorithm selection
+        algo_label = tk.Label(control_frame, text="Thuật toán:", font=("Helvetica", 10))
+        algo_label.grid(row=0, column=0, sticky=tk.W, pady=5)
+        
+        self.algo_var = tk.StringVar(value="Backtracking")
+        self.algo_combo = ttk.Combobox(
+            control_frame, 
+            textvariable=self.algo_var, 
+            values=["Backtracking", "Forward Checking", "Min-Conflicts", "AC-3"],
+            state="readonly",
+            width=18
+        )
+        self.algo_combo.grid(row=0, column=1, columnspan=3, sticky=tk.EW, padx=5, pady=5)
+        self.algo_combo.bind("<<ComboboxSelected>>", lambda e: self.reset_visualizer())
+
         # Speed slider
         speed_label = tk.Label(control_frame, text="Tốc độ trễ (ms):", font=("Helvetica", 10))
-        speed_label.grid(row=0, column=0, sticky=tk.W, pady=5)
+        speed_label.grid(row=1, column=0, sticky=tk.W, pady=5)
 
         self.speed_var = tk.IntVar(value=500)
         speed_scale = ttk.Scale(control_frame, from_=100, to=2000, variable=self.speed_var, orient=tk.HORIZONTAL)
-        speed_scale.grid(row=0, column=1, columnspan=2, sticky=tk.EW, padx=5, pady=5)
+        speed_scale.grid(row=1, column=1, columnspan=2, sticky=tk.EW, padx=5, pady=5)
         
         self.speed_display = tk.Label(control_frame, text="500 ms", font=("Helvetica", 10))
-        self.speed_display.grid(row=0, column=3, sticky=tk.E, padx=5)
+        self.speed_display.grid(row=1, column=3, sticky=tk.E, padx=5)
         speed_scale.config(command=self.update_speed_label)
 
         # Action buttons
@@ -207,7 +233,7 @@ class HCMCMapColoringVisualizer:
             font=("Helvetica", 10, "bold"), 
             command=self.toggle_auto_run
         )
-        self.btn_auto.grid(row=1, column=0, columnspan=2, sticky=tk.NSEW, padx=2, pady=10)
+        self.btn_auto.grid(row=2, column=0, columnspan=2, sticky=tk.NSEW, padx=2, pady=10)
 
         self.btn_step = tk.Button(
             control_frame, 
@@ -215,7 +241,7 @@ class HCMCMapColoringVisualizer:
             font=("Helvetica", 10, "bold"), 
             command=self.trigger_step
         )
-        self.btn_step.grid(row=1, column=2, columnspan=2, sticky=tk.NSEW, padx=2, pady=10)
+        self.btn_step.grid(row=2, column=2, columnspan=2, sticky=tk.NSEW, padx=2, pady=10)
 
         self.btn_reset = tk.Button(
             control_frame, 
@@ -223,7 +249,7 @@ class HCMCMapColoringVisualizer:
             font=("Helvetica", 10, "bold"), 
             command=self.reset_visualizer
         )
-        self.btn_reset.grid(row=2, column=0, columnspan=4, sticky=tk.NSEW, padx=2, pady=5)
+        self.btn_reset.grid(row=3, column=0, columnspan=4, sticky=tk.NSEW, padx=2, pady=5)
 
         # Status label
         self.status_var = tk.StringVar(value="Đang rảnh. Nhấn Start để chạy.")
@@ -232,7 +258,7 @@ class HCMCMapColoringVisualizer:
             textvariable=self.status_var, 
             font=("Helvetica", 10, "italic")
         )
-        status_label.grid(row=3, column=0, columnspan=4, pady=5)
+        status_label.grid(row=4, column=0, columnspan=4, pady=5)
 
         # Color Palette Guide Frame
         palette_frame = tk.LabelFrame(
@@ -364,13 +390,35 @@ class HCMCMapColoringVisualizer:
         self.draw_map()
 
     def make_generator(self):
-        # Delegate to the backtracking generator imported from algorithms.py
-        return backtracking_coloring_generator(
-            constrains, 
-            self.colors_list, 
-            self.list_of_keys, 
-            self.assignments
-        )
+        algo = self.algo_var.get()
+        if algo == "Backtracking":
+            return backtracking_coloring_generator(
+                constrains, 
+                self.colors_list, 
+                self.list_of_keys, 
+                self.assignments
+            )
+        elif algo == "Forward Checking":
+            return forward_checking_generator(
+                constrains, 
+                self.colors_list, 
+                self.list_of_keys, 
+                self.assignments
+            )
+        elif algo == "Min-Conflicts":
+            return min_conflicts_generator(
+                constrains, 
+                self.colors_list, 
+                self.list_of_keys, 
+                self.assignments
+            )
+        elif algo == "AC-3":
+            return ac3_coloring_generator(
+                constrains, 
+                self.colors_list, 
+                self.list_of_keys, 
+                self.assignments
+            )
 
     def run_next_step(self):
         if self.finished or self.generator is None:
