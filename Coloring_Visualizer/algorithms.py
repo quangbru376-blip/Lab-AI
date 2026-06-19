@@ -1,3 +1,6 @@
+import copy
+import random
+
 constrains = {
     "Thành phố Thủ Đức": [
         "Quận 1", "Quận 4", "Quận 7", "Quận 12", "Quận Bình Thạnh"],
@@ -124,6 +127,179 @@ def backtracking_coloring_generator(constrains, colors_list, list_of_keys, assig
         yield ("BACKTRACK", node, color, None)
         
     return False
+
+
+def forward_checking_generator(constrains, colors_list, list_of_keys, assignments, present_domain=None, idx=0):
+    if present_domain is None:
+        present_domain = {district: list(colors_list) for district in list_of_keys}
+        
+    if idx >= len(list_of_keys):
+        yield ("SUCCESS", None, None, None)
+        return True
+        
+    node = list_of_keys[idx]
+    for color in present_domain[node]:
+        yield ("TRYING", node, color, None)
+        
+        temp_domain = copy.deepcopy(present_domain)
+        conflicts = []
+        fc_fail = False
+        
+        for neighbor in constrains[node]:
+            if assignments.get(neighbor) is None:  # Chỉ lọc miền giá trị láng giềng chưa gán màu
+                if color in temp_domain[neighbor]:
+                    temp_domain[neighbor].remove(color)
+                if len(temp_domain[neighbor]) == 0:
+                    conflicts.append(neighbor)
+                    fc_fail = True
+        
+        if fc_fail:
+            yield ("CONFLICT", node, color, conflicts)
+            continue
+            
+        assignments[node] = color
+        yield ("ASSIGN", node, color, None)
+        
+        sub_gen = forward_checking_generator(constrains, colors_list, list_of_keys, assignments, temp_domain, idx + 1)
+        success = False
+        while True:
+            try:
+                val = next(sub_gen)
+                yield val
+            except StopIteration as e:
+                success = e.value
+                break
+                
+        if success:
+            return True
+            
+        assignments[node] = None
+        yield ("BACKTRACK", node, color, None)
+        
+    return False
+
+
+def min_conflicts_generator(constrains, colors_list, list_of_keys, assignments, max_steps=1000):
+    # Khởi tạo gán màu ngẫu nhiên cho tất cả các quận (Complete Assignment)
+    for node in list_of_keys:
+        color = random.choice(colors_list)
+        assignments[node] = color
+        yield ("ASSIGN", node, color, None)
+        
+    for step in range(max_steps):
+        # Tìm các quận bị xung đột màu với láng giềng
+        conflicted_nodes = []
+        for node in list_of_keys:
+            conflicts = []
+            for neighbor in constrains[node]:
+                if assignments.get(neighbor) == assignments[node]:
+                    conflicts.append(neighbor)
+            if conflicts:
+                conflicted_nodes.append((node, conflicts))
+        
+        # Nếu không còn quận nào bị xung đột, ta đã tìm thấy lời giải hợp lệ
+        if not conflicted_nodes:
+            yield ("SUCCESS", None, None, None)
+            return True
+            
+        # Chọn ngẫu nhiên một quận bị xung đột
+        node, conflicts = random.choice(conflicted_nodes)
+        yield ("CONFLICT", node, assignments[node], conflicts)
+        
+        # Tìm màu có số lượng xung đột ít nhất cho quận này
+        min_conflict_count = float('inf')
+        best_colors = []
+        for color in colors_list:
+            count = 0
+            for neighbor in constrains[node]:
+                if assignments.get(neighbor) == color:
+                    count += 1
+            if count < min_conflict_count:
+                min_conflict_count = count
+                best_colors = [color]
+            elif count == min_conflict_count:
+                best_colors.append(color)
+        
+        # Gán màu được chọn ngẫu nhiên trong danh sách các màu tối ưu nhất
+        color = random.choice(best_colors)
+        assignments[node] = color
+        yield ("ASSIGN", node, color, None)
+        
+    return False
+
+
+def revise(present_domain, xi, xj, constrains):
+    revised = False
+    for color_i in list(present_domain[xi]):
+        has_support = False
+        for color_j in present_domain[xj]:
+            if color_i != color_j:
+                has_support = True
+                break
+        if not has_support:
+            present_domain[xi].remove(color_i)
+            revised = True
+    return revised
+
+
+def ac3(present_domain, constrains):
+    queue = []
+    for xi in constrains.keys():
+        for xj in constrains[xi]:
+            queue.append((xi, xj))
+            
+    while queue:
+        (xi, xj) = queue.pop(0)
+        if revise(present_domain, xi, xj, constrains):
+            if len(present_domain[xi]) == 0:
+                return False
+            for xk in constrains[xi]:
+                if xk != xj:
+                    queue.append((xk, xi))
+    return True
+
+
+def ac3_coloring_generator(constrains, colors_list, list_of_keys, assignments, present_domain=None, idx=0):
+    if present_domain is None:
+        present_domain = {district: list(colors_list) for district in list_of_keys}
+        
+    if idx >= len(list_of_keys):
+        yield ("SUCCESS", None, None, None)
+        return True
+        
+    node = list_of_keys[idx]
+    for color in present_domain[node]:
+        yield ("TRYING", node, color, None)
+        
+        temp_domain = copy.deepcopy(present_domain)
+        temp_domain[node] = [color]
+        
+        if ac3(temp_domain, constrains):
+            assignments[node] = color
+            yield ("ASSIGN", node, color, None)
+            
+            sub_gen = ac3_coloring_generator(constrains, colors_list, list_of_keys, assignments, temp_domain, idx + 1)
+            success = False
+            while True:
+                try:
+                    val = next(sub_gen)
+                    yield val
+                except StopIteration as e:
+                    success = e.value
+                    break
+                    
+            if success:
+                return True
+                
+            assignments[node] = None
+            yield ("BACKTRACK", node, color, None)
+        else:
+            # Tìm láng giềng có miền giá trị bị rỗng để hiển thị xung đột
+            empty_nodes = [n for n in list_of_keys if len(temp_domain[n]) == 0]
+            yield ("CONFLICT", node, color, empty_nodes)
+            
+    return False
+
 
 # Run backtracking coloring starting from index 0
 if __name__ == "__main__":
