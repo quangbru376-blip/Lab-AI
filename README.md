@@ -24,6 +24,8 @@ Theo chân một "chuyên gia dọn dẹp" (tác nhân máy hút bụi AI) rong 
 - **Môi trường:** Đa dạng từ thế giới tất định (biết mọi thứ), quan sát một phần cho đến thế giới hoàn toàn ngẫu nhiên.
 - **Thuật toán áp dụng:** Nơi hội tụ của các thuật toán tìm kiếm không gian trạng thái kinh điển: từ dò dẫm cơ bản (`BFS`, `DFS`), dò tìm có tính toán (`UCS`, `A*`) cho đến các thuật toán xử lý môi trường bất định và phức tạp. Nhìn AI dọn dẹp đảm bảo cực kỳ thỏa mãn! 🤖✨
 
+![Demo Vacuum Visualizer](https://github.com/quangbru376-blip/Lab-AI/blob/main/gif/Vacuum.gif)
+
 ---
 
 ## Algorithms Pseudocode
