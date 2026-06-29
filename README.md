@@ -3,6 +3,9 @@
 Chào mừng bạn đến với kho lưu trữ tổng hợp các **Thuật toán Trí tuệ Nhân tạo (AI)** được viết hoàn toàn bằng Python! 🐍 
 Đặc biệt, repo này cung cấp các **Visualizers (Trình trực quan hóa)** cực kỳ sinh động để giúp bạn "mắt thấy tai nghe" cách các thuật toán AI hoạt động trong thực tế. Toàn bộ các thuật toán ở đây đều được đúc kết từ môn học Trí tuệ Nhân tạo. 💡
 
+### Giảng viên hướng dẫn: Tiến sĩ. Phan Thị Thùy Trang
+### Tên tác giả: Đặng Duy Quang
+### MSSV tác giả: 24110307
 ---
 
 ## 🎨 Khám phá Các Trình Trực Quan Hoá (Visualizers)
