@@ -19,8 +19,8 @@ class TicTacToeVisualizer:
     def __init__(self, root):
         self.root = root
         self.root.title("Tic-Tac-Toe Algorithm Visualizer")
-        self.root.geometry("600x450")
-        self.root.resizable(False, False)
+        self.root.geometry("750x550")
+        self.root.resizable(True, True)
 
         # Game state
         self.board_state = initialize_board()
