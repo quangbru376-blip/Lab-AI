@@ -13,7 +13,8 @@ Học AI sẽ không hề khô khan nếu bạn có thể nhìn thấy chúng ch
 Bạn đau đầu với bài toán **Thoả mãn Ràng buộc (CSP)**? Visualizer này sẽ biến việc **Tô màu đồ thị (Graph Coloring)** thành một buổi trình diễn nghệ thuật! 🎨
 - **Nhiệm vụ:** Tô màu các đỉnh sao cho không có 2 đỉnh kề nhau nào bị "đụng hàng" màu sắc.
 - **Thuật toán áp dụng:** Bạn sẽ được tận mắt quan sát cách AI "thử và sai" hay "tiên đoán" thông qua các thuật toán: `Backtracking` (Quay lui), `Forward Checking` (Kiểm tra tới) và `Min Conflicts` (Tối thiểu hóa xung đột).
-
+  
+{https://github.com/quangbru376-blip/Lab-AI/blob/main/gif/Vacuum.gif}
 ### 2. ⚔️ Tic-Tac-Toe Visualizer (`Tictactoe_Visualizer`)
 Đưa bạn vào đấu trường trí tuệ của bộ môn **Tìm kiếm đối kháng (Adversarial Search)**! 🎮
 - **Trải nghiệm:** Xem một "bộ não AI" tính toán hàng nghìn nước đi trước khi đánh dấu X hay O. 
