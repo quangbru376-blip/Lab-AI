@@ -14,10 +14,18 @@ Bạn đau đầu với bài toán **Thoả mãn Ràng buộc (CSP)**? Visualize
 - **Nhiệm vụ:** Tô màu các đỉnh sao cho không có 2 đỉnh kề nhau nào bị "đụng hàng" màu sắc.
 - **Thuật toán áp dụng:** Bạn sẽ được tận mắt quan sát cách AI "thử và sai" hay "tiên đoán" thông qua các thuật toán: `Backtracking` (Quay lui), `Forward Checking` (Kiểm tra tới) và `Min Conflicts` (Tối thiểu hóa xung đột).
 
+![Demo Coloring Visualizer](https://github.com/quangbru376-blip/Lab-AI/blob/main/gif/Coloring.gif)
+
+---
+
 ### 2. ⚔️ Tic-Tac-Toe Visualizer (`Tictactoe_Visualizer`)
 Đưa bạn vào đấu trường trí tuệ của bộ môn **Tìm kiếm đối kháng (Adversarial Search)**! 🎮
 - **Trải nghiệm:** Xem một "bộ não AI" tính toán hàng nghìn nước đi trước khi đánh dấu X hay O. 
 - **Thuật toán áp dụng:** Đi sâu vào cây trò chơi với các "tuyệt chiêu" như `Minimax` (tính toán hoàn hảo), `Alpha-Beta Pruning` (cắt tỉa thông minh để suy nghĩ nhanh hơn) và `Expectimax` (đối phó với những biến số khó lường). 🧠
+
+![Demo Tic Tac Toe Visualizer](https://github.com/quangbru376-blip/Lab-AI/blob/main/gif/Tictactoe.gif)
+
+---
 
 ### 3. 🧹 Vacuum Cleaner Visualizer (`Vacuum_Cleaner_Visualizer`)
 Theo chân một "chuyên gia dọn dẹp" (tác nhân máy hút bụi AI) rong ruổi khắp bản đồ lưới để dọn sạch bụi bẩn! ✨
